@@ -153,6 +153,8 @@ def get_plane_from_mri(muse_labelmap):
 		if abs(np.sum(cc[:,:y,:]) - np.sum(cc[:,y:,:])) < cnt:
 			mid_slice = y
 			cnt = abs(np.sum(cc[:,:y,:]) - np.sum(cc[:,y:,:]))
+   
+	print('what is bg_t_slice: ', bg_t_slice)
 
 	return bg_t_slice, mid_slice
 

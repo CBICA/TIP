@@ -52,6 +52,7 @@ def makeTablePKL(dfRef,dfSub,path):
 	names = ['Brain', 'Ventricle', 'Gray Matter', 'White Matter', 'Brainstem', 'Cerebellum', 'Hippocampus']
 
 	tmpTable = pd.DataFrame(columns=["Brain Region", "Volume (cubic mL)", "Bilateral Z-score", "R", "R Z-score", "L", "L Z-score", "Asymmetry Index (AI)", "AI Z-score"])
+	dfRef = dfRef[(dfRef['Age'] >= dfSub['Age'].values[0] -3 ) & (dfRef['Age'] <= dfSub['Age'].values[0] + 3) & (dfRef['Diagnosis_nearest_2.0'] == 'CN')]
 	for key in names:
 		totalnorm = round((dfSub["Total " + key + " Volume"].values[0] - dfRef["Total " + key + " Volume"].mean())/dfRef["Total " + key + " Volume"].std(),2)
 		if 'Brainstem' in key:
@@ -359,8 +360,8 @@ def makeFlagTablePKL(dfRef,mydict,MUSErois,path):
 		right = 'Right ' + lowercase(key)
 		l_zscore = mydict[left]
 		r_zscore = mydict[right]
-		l_vol = str(round(MUSErois[left],1))
-		r_vol = str(round(MUSErois[right],1))
+		l_vol = str(round(MUSErois[left],2))
+		r_vol = str(round(MUSErois[right],2))
 		ai = str(AI_subj[key])
 		ai_zscore = AI_zscores[key]
 		lobe = list(maphemi.loc[(maphemi['ROI_NAME'] == str(left)), 'SUBGROUP_0'].values)[0]

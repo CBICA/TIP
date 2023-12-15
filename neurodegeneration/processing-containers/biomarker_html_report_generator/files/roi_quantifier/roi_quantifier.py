@@ -134,11 +134,12 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 	nonROI.extend(['MRID','Study','PTID','Age','Sex','Diagnosis_nearest_2.0','SITE','Date','ICV','SPARE_AD','SPARE_BA'])
 	dfRefTmp = dfRef.copy(deep=True)
 	# Rename 702 to ICV
-	dfRefTmp.rename(columns={'702':'ICV'}, inplace=True)
-
+	dfRefTmp['ICV'] = dfRefTmp['702']
+ 
 	# Do the ICV-adjust
-	dfRefTmp[dfRefTmp.columns.difference(nonROI)] = dfRefTmp[dfRefTmp.columns.difference(nonROI)].div(dfRefTmp['ICV'], axis=0)*dfRefTmp['ICV'].mean()
-
+	dfRefTmp[dfRefTmp.columns.difference(nonROI)] = dfRefTmp.apply(lambda row: row[dfRefTmp.columns.difference(nonROI)].div(row['ICV']).mul(dfRefTmp[ (dfRefTmp['Age'] >= row['Age'] -3 ) & ## Ref age >= age - 3
+                                                                                                                                           (dfRefTmp['Age'] <= row['Age'] +3 ) & ## Ref age <= age + 3
+                                                                                                                                           (dfRefTmp['Diagnosis_nearest_2.0'] == 'CN')]['ICV'].mean()), axis = 1) ## CN Only
 	# Convert from mm^3 to cm^3
 	dfRefTmp[dfRefTmp.columns.difference(nonROI)] = dfRefTmp[dfRefTmp.columns.difference(nonROI)]/1000
 
@@ -158,7 +159,10 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 	### Brain volumes ###
 	# Total brain volume
 	dictr["Total Brain Volume"] = all_MuseROIs["701"]
-	dfRef.rename(columns={"701":"Total Brain Volume"}, inplace = True)
+	
+	#dfRef.rename(columns={"701":"Total Brain Volume"}, inplace = True)
+	dfRef['Total Brain Volume'] = dfRef['701']
+
 	# Right brain volume (1/2 of all indivisible ROIs: 4,11,35,46,71,72,73,95)
 	dictr["Right Brain Volume"] = np.sum(VolumesInd[Rinds]) + np.sum(VolumesInd[[4,11,35,71,72,73,95]])/2
 	dfRef["Right Brain Volume"] = dfRef[[str(i) for i in Rinds]].sum(axis=1) + (dfRef[['4','11','35','71','72','73','95']].sum(axis=1))/2
@@ -171,13 +175,18 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 
 	### Brainstem ### - had to adjust this ROI
 	dictr["Total Brainstem Volume"] = all_MuseROIs["35"] + all_MuseROIs["61"] + all_MuseROIs["62"]
-	dfRef["35"] = dfRef["35"] + dfRef["61"] + dfRef["62"]
-	dfRef.rename(columns={"35":"Total Brainstem Volume"}, inplace = True)
+	# dfRef["35"] = dfRef["35"] + dfRef["61"] + dfRef["62"]
+	# dfRef.rename(columns={"35":"Total Brainstem Volume"}, inplace = True)
+	dfRef['Total Brainstem Volume'] = dfRef["35"] + dfRef["61"] + dfRef["62"]
 
 	### Ventricles###
 	# Total ventricle
 	dictr["Total Ventricle Volume"] = all_MuseROIs["509"]
-	dfRef.rename(columns={"509":"Total Ventricle Volume"}, inplace = True)
+	
+ 
+	#dfRef.rename(columns={"509":"Total Ventricle Volume"}, inplace = True)
+	dfRef['Total Ventricle Volume'] = dfRef['509']
+
 	# Right ventricle (1/2 of 3rd + 4th)
 	dictr["Right Ventricle Volume"] = all_MuseROIs["49"] + all_MuseROIs["51"] + all_MuseROIs["4"]/2 + all_MuseROIs["11"]/2
 	dfRef["Right Ventricle Volume"] = dfRef["49"] + dfRef["51"] + dfRef["4"]/2 + dfRef["11"]/2
@@ -191,7 +200,10 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 	### Cerebellum ###
 	# Total cerebellum
 	dictr["Total Cerebellum Volume"] = all_MuseROIs["502"]
-	dfRef.rename(columns={"502":"Total Cerebellum Volume"}, inplace = True)
+	
+	#dfRef.rename(columns={"502":"Total Cerebellum Volume"}, inplace = True)
+	dfRef['Total Cerebellum Volume'] = dfRef['502']
+ 
 	# Right cerebellum
 	dictr["Right Cerebellum Volume"] = all_MuseROIs["518"]
 	dfRef["Right Cerebellum Volume"] = dfRef["518"]
@@ -206,15 +218,21 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 	# Total gray matter
 	dictr["Total Gray Matter Volume"] = all_MuseROIs["601"]
 	dfRef["601"] = dfRef["601"]
-	dfRef.rename(columns={"601":"Total Gray Matter Volume"}, inplace = True)
+	#dfRef.rename(columns={"601":"Total Gray Matter Volume"}, inplace = True)
+	dfRef['Total Gray Matter Volume'] = dfRef['601']
+ 
 	# Right gray matter - had to adjust this ROI with 1/2 of certain ROIs
 	dictr["Right Gray Matter Volume"] = all_MuseROIs["613"] + all_MuseROIs["71"]/2 + all_MuseROIs["72"]/2 + all_MuseROIs["73"]/2
-	dfRef["613"] = dfRef["613"] + dfRef["71"]/2 + dfRef["72"]/2 + dfRef["73"]/2
-	dfRef.rename(columns={"613":"Right Gray Matter Volume"}, inplace = True)
+	# dfRef["613"] = dfRef["613"] + dfRef["71"]/2 + dfRef["72"]/2 + dfRef["73"]/2
+	# dfRef.rename(columns={"613":"Right Gray Matter Volume"}, inplace = True)
+ 
+	dfRef["Right Gray Matter Volume"] = dfRef["613"] + dfRef["71"]/2 + dfRef["72"]/2 + dfRef["73"]/2
+ 
 	# Left gray matter - had to adjust this ROI with 1/2 of certain ROIs
 	dictr["Left Gray Matter Volume"] = all_MuseROIs["606"] + all_MuseROIs["71"]/2 + all_MuseROIs["72"]/2 + all_MuseROIs["73"]/2
-	dfRef["606"] = dfRef["606"] + dfRef["71"]/2 + dfRef["72"]/2 + dfRef["73"]/2
-	dfRef.rename(columns={"606":"Left Gray Matter Volume"}, inplace = True)
+	# dfRef["606"] = dfRef["606"] + dfRef["71"]/2 + dfRef["72"]/2 + dfRef["73"]/2
+	# dfRef.rename(columns={"606":"Left Gray Matter Volume"}, inplace = True)
+	dfRef['Left Gray Matter Volume'] =  dfRef["606"] + dfRef["71"]/2 + dfRef["72"]/2 + dfRef["73"]/2
 
 	# Asymmetry index for gray matter
 	dictr["Gray Matter AI"] = abs(dictr["Left Gray Matter Volume"] - dictr["Right Gray Matter Volume"])/((dictr["Left Gray Matter Volume"] + dictr["Right Gray Matter Volume"])/2)
@@ -223,13 +241,19 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 	### White Matter ###
 	# Total white matter
 	dictr["Total White Matter Volume"] = all_MuseROIs["604"]
-	dfRef.rename(columns={"604":"Total White Matter Volume"}, inplace = True)
+	#dfRef.rename(columns={"604":"Total White Matter Volume"}, inplace = True)
+	dfRef['Total White Matter Volume'] = dfRef['604']
+
 	# Right white matter - had to adjust this ROI with 1/2 of certain ROIs
 	dictr["Right White Matter Volume"] = all_MuseROIs["614"] + all_MuseROIs["95"]/2
-	dfRef.rename(columns={"614":"Right White Matter Volume"}, inplace = True)
+	#dfRef.rename(columns={"614":"Right White Matter Volume"}, inplace = True)
+	dfRef['Right White Matter Volume'] = dfRef['614']
+ 
 	# Left white matter - had to adjust this ROI with 1/2 of certain ROIs
 	dictr["Left White Matter Volume"] = all_MuseROIs["607"] + all_MuseROIs["95"]/2
-	dfRef.rename(columns={"607":"Left White Matter Volume"}, inplace = True)
+	#dfRef.rename(columns={"607":"Left White Matter Volume"}, inplace = True)
+	dfRef['Left White Matter Volume'] = dfRef['607']
+ 
 	# Asymmetry index for white matter
 	dictr["White Matter AI"] = abs(dictr["Left White Matter Volume"] - dictr["Right White Matter Volume"])/((dictr["Left White Matter Volume"] + dictr["Right White Matter Volume"])/2)
 	dfRef["White Matter AI"] = (dfRef["Left White Matter Volume"] - dfRef["Right White Matter Volume"]).abs().div((dfRef["Left White Matter Volume"] + dfRef["Right White Matter Volume"])/2, axis = 0)
@@ -252,40 +276,49 @@ def calcRoiVolumes(maskfile, mapcsv, dfRef, subDict):
 
 ### Function adjust all ROIs by ICV and scales down by 1000 ###
 def ICVAdjust(dfSub, dfRef,WMLSref,all_MuseROIs_num,all_MuseROIs_name):
+
 	## ICV-adjustment for subject values
 	nonROI = list(dfSub.columns[dfSub.columns.str.contains('AI')].values)
 	othervars = ['MRID','Age','Sex','ICV']
 	nonROI.extend(othervars)
 
 	#### ICV-adjustment for subject values ####
-	dfSub[dfSub.columns.difference(nonROI)] = dfSub[dfSub.columns.difference(nonROI)].div(dfSub['ICV'], axis=0)*dfRef['ICV'].mean()
-	all_MuseROIs_num = {key: ((value / dfSub['ICV'].values[0])*dfRef['ICV'].mean())/1000 for key, value in all_MuseROIs_num.items()}
-	all_MuseROIs_name = {key: ((value / dfSub['ICV'].values[0])*dfRef['ICV'].mean())/1000 for key, value in all_MuseROIs_name.items()}
-	# make 702 into actual ICV value
+	const_factor = dfRef[(dfRef['Age'] >= dfSub.loc[0, 'Age'] - 3) & 
+                         (dfRef['Age'] <= dfSub.loc[0, 'Age'] + 3) & 
+                         (dfRef['Diagnosis_nearest_2.0'] == 'CN')]['ICV'].mean() /1000
+	
+	dfSub[dfSub.columns.difference(nonROI)] = dfSub[dfSub.columns.difference(nonROI)].div(dfSub['ICV'], axis=0)* const_factor
+
+	all_MuseROIs_num = {key: ((value / dfSub['ICV'].values[0])*const_factor)for key, value in all_MuseROIs_num.items()}
+	all_MuseROIs_name = {key: ((value / dfSub['ICV'].values[0])*const_factor) for key, value in all_MuseROIs_name.items()}
+ 
+    # make 702 into actual ICV value
 	all_MuseROIs_num['702'] = dfSub['ICV'].values[0]
-
-	# Convert from mm^3 to cm^3
-	dfSub[dfSub.columns.difference(nonROI)] = dfSub[dfSub.columns.difference(nonROI)]/1000
-
-	## ICV-adjustment for ROI reference values
+ 
+     
+    ## ICV-adjustment for ROI reference values
 	nonROI = list(dfRef.columns[dfRef.columns.str.contains('AI')].values)
 	othervars = ['MRID','Study','PTID','Age','Sex','Diagnosis_nearest_2.0','SITE','Date','ICV','SPARE_AD','SPARE_BA']
 	nonROI.extend(othervars)
-
-	#### ICV-adjustment for ROI reference values ####
-	dfRef[dfRef.columns.difference(nonROI)] = dfRef[dfRef.columns.difference(nonROI)].div(dfRef['ICV'], axis=0)*dfRef['ICV'].mean()
-	# Convert from mm^3 to cm^3
+ 
+	dfRef[dfRef.columns.difference(nonROI)] = dfRef.apply(lambda row: row[dfRef.columns.difference(nonROI)].div(row['ICV']).mul(dfRef[ (dfRef['Age'] >= row['Age'] -3 ) & ## Ref age >= age - 3
+                                                                                                                                       (dfRef['Age'] <= row['Age'] +3 ) & ## Ref age <= age + 3
+                                                                                                                                       (dfRef['Diagnosis_nearest_2.0'] == 'CN')]['ICV'].mean()), axis = 1) ## CN Only
 	dfRef[dfRef.columns.difference(nonROI)] = dfRef[dfRef.columns.difference(nonROI)]/1000
+	
+
 
 	## ICV-adjustment for WMLS reference values
 	nonROI = ['ID','Phase','PTID','Age','Sex','Diagnosis_nearest_2.0','Date','ICV']
 
-	#### ICV-adjustment for WMLS reference values ####
-	WMLSref[WMLSref.columns.difference(nonROI)] = WMLSref[WMLSref.columns.difference(nonROI)].div(WMLSref['ICV'], axis=0)*WMLSref['ICV'].mean()
-	# Convert from mm^3 to cm^3
+	WMLSref[WMLSref.columns.difference(nonROI)]  = WMLSref.apply(lambda row: row[WMLSref.columns.difference(nonROI)].div(row['ICV']).mul(WMLSref[ (WMLSref['Age'] >= row['Age'] -3 ) & ## Ref age >= age - 3
+                                                                                                                                                  (WMLSref['Age'] <= row['Age'] +3 ) & ## Ref age <= age + 3
+                                                                                                                                                  (WMLSref['Diagnosis_nearest_2.0'] == 'CN')]['ICV'].mean()), axis = 1) ## CN Only
 	WMLSref[WMLSref.columns.difference(nonROI)] = WMLSref[WMLSref.columns.difference(nonROI)]/1000
 
+
 	return dfSub, dfRef, WMLSref, all_MuseROIs_num, all_MuseROIs_name
+
 
 
 ############## MAIN ##############
@@ -299,9 +332,6 @@ def roi_quantifier_main(roi, icv, wmls, _json, out_path):
 	dfRef = dfRef.sort_values(by='Date')
 	# Get first-time points only from reference values
 	dfRef = dfRef.drop_duplicates(subset=['PTID'], keep='first')
-	# Replace binary variable with categorical
-	dfRef['Sex'].replace(0, 'F',inplace=True)
-	dfRef['Sex'].replace(1, 'M',inplace=True)
 
 
 	###########Read subject data (demog and MRI)#############################
@@ -341,7 +371,7 @@ def roi_quantifier_main(roi, icv, wmls, _json, out_path):
 		dfSub.loc[0, key] = roiVols[key]
 
 	# Changes ROI column name from 702 to ICV
-	dfRef.rename(columns={'702':'ICV'}, inplace=True)
+	dfRef['ICV'] = dfRef['702']
 
 	## Read wmls, if provided
 	wmlsVol = 0
@@ -360,9 +390,9 @@ def roi_quantifier_main(roi, icv, wmls, _json, out_path):
 	WMLSref['Sex'].replace(1, 'M',inplace=True)
 	# same sex selection - all work with WMLSref onwards is based on same sex
 	WMLSref = WMLSref[WMLSref.Sex == dfSub.loc[0,'Sex']]
+ 
 	# Rename 604 to Total White Matter Hyperintensity Volume
 	WMLSref.rename(columns={'604':'Total White Matter Hyperintensity Volume'}, inplace=True)
- 
 	Muse_ROI = copy.deepcopy(all_MuseROIs_num)
 
 	# ICV-adjust only if ICV is available - in final version, we should throw an error and stop the pipeline
